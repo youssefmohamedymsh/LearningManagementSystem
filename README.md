@@ -4,7 +4,9 @@
 ![Java 17](https://img.shields.io/badge/Java-17-ED8B00?logo=openjdk&logoColor=white)
 ![JUnit 5](https://img.shields.io/badge/JUnit-5-25A162?logo=junit5&logoColor=white)
 
-A command-line course enrollment system. It loads 100 students from a delimited text export and 17 courses from XML, converts both to CSV, and lets you enroll students in courses, drop them and swap them. Enrollments are saved as JSON after every change.
+A course enrollment system with a **web UI** and a **command-line** interface. It loads 100 students from a delimited text export and 17 courses from XML, converts both to CSV, and lets you enroll students in courses, drop them and swap them. Enrollments are saved as JSON after every change.
+
+![Enrollment desk web UI](docs/web-ui.png)
 
 ## The story: re-testing my own code
 
@@ -29,9 +31,27 @@ I also hardened the XML loader against XXE (external-entity) attacks, made each 
 - Replacing a course is all-or-nothing: if the new course isn't allowed, nothing changes.
 - Unknown student or course IDs are refused with a clear message.
 
+## Web UI
+
+An enrollment desk in the browser: search the 100 students, pick one, and enroll, drop or swap courses. The rules are visible before you hit them. A meter shows the 6 course slots, **Enroll** is disabled (with the reason on hover) for courses the student already has or once they're full, and **Drop** is locked on their last course. Every change shows a confirmation or the rule that blocked it.
+
+It runs on the JDK's built-in HTTP server, with no web framework, over the same `EnrollmentService` the CLI uses. Every element has a `data-testid`, ready for UI automation.
+
+| Method | Path | Does |
+|---|---|---|
+| `GET` | `/api/students` | Student list with course counts |
+| `GET` | `/api/students/{id}` | One student with their courses |
+| `GET` | `/api/courses` | Course catalogue |
+| `POST` | `/api/students/{id}/courses` | Enroll: `{"courseId": 3}` |
+| `DELETE` | `/api/students/{id}/courses/{courseId}` | Drop |
+| `PUT` | `/api/students/{id}/courses/{courseId}` | Replace: `{"newCourseId": 5}` |
+| `GET` | `/api/enrollments` | All enrollments |
+
+Rule violations return **409** with the rule's message, unknown IDs **404**, and malformed requests **400**.
+
 ## Tests
 
-**37 JUnit 5 tests** in four layers:
+**45 JUnit 5 tests** in five layers:
 
 | Layer | What's tested |
 |---|---|
@@ -39,6 +59,7 @@ I also hardened the XML loader against XXE (external-entity) attacks, made each 
 | `data` | XML and text parsing against the real data files, CSV quoting round-trips, JSON shape, malformed input, XXE rejection |
 | `service` | ID lookup, unknown IDs, atomic replacement through the service |
 | `cli` | The menu driven with scripted keyboard input, including invalid input and end-of-input |
+| `web` | Every API endpoint over real HTTP: happy paths, 409 rule violations, 404 unknown IDs, 400 malformed requests |
 
 ```bash
 mvn test
@@ -47,10 +68,11 @@ mvn test
 ## Run it
 
 ```bash
-mvn compile exec:java
+mvn compile exec:java -Dexec.args="--web"   # web UI at http://localhost:8080
+mvn compile exec:java                        # command-line menu
 ```
 
-Pick a student by ID, then `a` to enroll, `d` to drop, `r` to replace, `b` to go back, and `q` on the home screen to quit. `output/` gets `students.csv`, `courses.csv` and `enrollments.json`.
+In the CLI, pick a student by ID, then `a` to enroll, `d` to drop, `r` to replace, `b` to go back, and `q` on the home screen to quit. `output/` gets `students.csv`, `courses.csv` and `enrollments.json`.
 
 ## Project structure
 
@@ -59,7 +81,9 @@ src/main/java/.../lms/
   model/     Course, Student (enrollment rules), EnrollmentException
   data/      CourseCatalogue (XML), StudentRoster (text), Csv, EnrollmentJson
   service/   EnrollmentService: lookups by ID, applies changes
-  cli/       Main: the interactive menu
+  cli/       Main: the interactive menu (and --web to start the web UI)
+  web/       WebServer: JSON API and static files
+src/main/resources/web/           the web UI (HTML, CSS, JS)
 src/main/resources/data/
   courses.xml, student-data.txt   (synthetic sample data)
 src/test/java/...                 tests mirroring the main packages

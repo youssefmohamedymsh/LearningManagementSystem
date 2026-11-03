@@ -43,6 +43,16 @@ public final class Main {
         EnrollmentService service = new EnrollmentService(
                 StudentRoster.parse(resource("/data/student-data.txt")),
                 CourseCatalogue.fromXml(Main.class.getResourceAsStream("/data/courses.xml")));
+        if (java.util.Arrays.asList(args).contains("--web")) {
+            int port = Integer.parseInt(System.getProperty("port", "8080"));
+            try {
+                var web = io.github.youssefmohamedymsh.lms.web.WebServer.start(service, Path.of("output"), port);
+                System.out.println("LMS web UI running at " + web.url() + "  (Ctrl+C to stop)");
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            return;
+        }
         new Main(service, System.in, System.out, Path.of("output")).run();
     }
 

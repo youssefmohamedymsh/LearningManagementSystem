@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Enrollment Desk · LMS</title>
+  <link rel="stylesheet" href="/app.css">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><img src="/favicon.svg" alt="" width="28" height="28"> <span>LMS</span> <small>Enrollment desk</small></div>
+    <div class="stats" data-testid="stats"></div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Students">
+      <label class="search">
+        <span class="visually-hidden">Search students</span>
+        <input type="search" id="search" data-testid="student-search" placeholder="Search by name, id or country" autocomplete="off">
+      </label>
+      <p class="list-count" data-testid="student-count"></p>
+      <ul class="student-list" data-testid="student-list"></ul>
+    </aside>
+
+    <main class="main">
+      <section class="empty" data-testid="no-student" aria-live="polite">
+        <h1>Pick a student</h1>
+        <p>Choose someone from the list to see their courses and change their enrollment.</p>
+      </section>
+
+      <section class="student" data-testid="student-panel" hidden>
+        <div class="student-card">
+          <div>
+            <p class="eyebrow">Student <span data-testid="student-id"></span></p>
+            <h1 data-testid="student-name"></h1>
+            <dl class="facts">
+              <div><dt>Grade</dt><dd data-testid="student-grade"></dd></div>
+              <div><dt>Email</dt><dd data-testid="student-email"></dd></div>
+              <div><dt>Location</dt><dd data-testid="student-location"></dd></div>
+            </dl>
+          </div>
+          <div class="slots" aria-label="Course slots">
+            <ol class="slot-meter" data-testid="slot-meter"></ol>
+            <p data-testid="slot-label"></p>
+          </div>
+        </div>
+
+        <h2>Enrolled courses</h2>
+        <p class="hint" data-testid="no-courses" hidden>Not enrolled in any course yet. Enroll from the catalogue below.</p>
+        <div class="table-wrap">
+          <table class="courses" data-testid="enrolled-table">
+            <thead><tr><th>#</th><th>Course</th><th>Instructor</th><th>Length</th><th>Hall</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h2>Course catalogue</h2>
+        <div class="table-wrap">
+          <table class="courses" data-testid="catalogue-table">
+            <thead><tr><th>#</th><th>Course</th><th>Instructor</th><th>Length</th><th>Hall</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="toast" role="status" aria-live="polite" data-testid="toast" hidden></div>
+  <script src="/app.js"></script>
+</body>
+</html>
