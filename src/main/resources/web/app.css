@@ -110,3 +110,6 @@ table.courses { width: 100%; border-collapse: collapse; }
   .brand small { display: none; }
   .stats { flex-basis: 100%; font-size: 12px; }
 }
+
+.load-error { margin: 4px 14px 12px; padding: 12px; border-radius: 8px; background: var(--danger-soft); color: var(--danger); display: grid; gap: 8px; justify-items: start; }
+.load-error p { margin: 0; }

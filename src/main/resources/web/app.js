@@ -1,6 +1,6 @@
 // Enrollment desk: talks to the JSON API in WebServer.java.
 const $ = (id) => document.querySelector(`[data-testid="${id}"]`);
-const state = { students: [], courses: [], selected: null, filter: '' };
+const state = { students: [], courses: [], selected: null, filter: '', busy: false };
 
 async function api(method, path, body) {
   const res = await fetch(path, {
@@ -9,7 +9,11 @@ async function api(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.message || 'Something went wrong');
+  if (!res.ok) {
+    const err = new Error(data.message || 'Something went wrong');
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 
@@ -149,6 +153,8 @@ function renderStudent() {
     tr.append(actions);
     catalogue.append(tr);
   }
+  $('no-catalogue').hidden = state.courses.length > 0;
+  $('catalogue-table').hidden = state.courses.length === 0;
 }
 
 function showReplace(actions, current) {
@@ -179,6 +185,10 @@ function showReplace(actions, current) {
 // ---------- Actions ----------
 
 async function change(method, path, body, successMessage) {
+  // One change at a time: a double click or a second click during a slow request is ignored.
+  if (state.busy) return;
+  state.busy = true;
+  $('student-panel').querySelectorAll('button').forEach((b) => { b.disabled = true; });
   try {
     state.selected = await api(method, path, body);
     const summary = state.students.find((x) => x.id === state.selected.id);
@@ -189,6 +199,23 @@ async function change(method, path, body, successMessage) {
     toast(successMessage);
   } catch (err) {
     toast(err.message, 'error');
+    // 409: the server's view differs from ours (e.g. someone else changed this student). Catch up.
+    if (err.status === 409) await refreshSelected();
+  } finally {
+    state.busy = false;
+    renderStudent(); // re-applies each button's own enabled/disabled state
+  }
+}
+
+async function refreshSelected() {
+  try {
+    state.selected = await api('GET', `/api/students/${state.selected.id}`);
+    const summary = state.students.find((x) => x.id === state.selected.id);
+    if (summary) summary.courseCount = state.selected.courses.length;
+    renderStudentList();
+    renderStats();
+  } catch {
+    // keep what we have; the error toast is already showing
   }
 }
 
@@ -208,10 +235,22 @@ document.getElementById('search').addEventListener('input', (e) => {
   renderStudentList();
 });
 
-(async () => {
-  [state.students, state.courses] = await Promise.all([api('GET', '/api/students'), api('GET', '/api/courses')]);
+async function load() {
+  $('load-error').hidden = true;
+  $('student-count').textContent = 'Loading students…';
+  try {
+    [state.students, state.courses] = await Promise.all([api('GET', '/api/students'), api('GET', '/api/courses')]);
+  } catch (err) {
+    $('student-count').textContent = '';
+    $('load-error-message').textContent = `Couldn't load the student list: ${err.message}`;
+    $('load-error').hidden = false;
+    return;
+  }
   renderStudentList();
   renderStats();
   const fromHash = /^#student-(\d+)$/.exec(location.hash);
   if (fromHash) selectStudent(Number(fromHash[1]));
-})();
+}
+
+$('retry-load').addEventListener('click', load);
+load();

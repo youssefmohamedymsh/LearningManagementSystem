@@ -20,6 +20,10 @@
         <input type="search" id="search" data-testid="student-search" placeholder="Search by name, id or country" autocomplete="off">
       </label>
       <p class="list-count" data-testid="student-count"></p>
+      <div class="load-error" role="alert" data-testid="load-error" hidden>
+        <p data-testid="load-error-message"></p>
+        <button type="button" class="btn" data-testid="retry-load">Try again</button>
+      </div>
       <ul class="student-list" data-testid="student-list"></ul>
     </aside>
 
@@ -56,6 +60,7 @@
         </div>
 
         <h2>Course catalogue</h2>
+        <p class="hint" data-testid="no-catalogue" hidden>No courses are on offer right now. New courses will appear here.</p>
         <div class="table-wrap">
           <table class="courses" data-testid="catalogue-table">
             <thead><tr><th>#</th><th>Course</th><th>Instructor</th><th>Length</th><th>Hall</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
